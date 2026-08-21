@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DinoStore - Premium Dinosaur Figures</title>
+    
+    <!-- SDK de Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
         * {
             margin: 0;
@@ -135,12 +139,18 @@
 
         .product-image {
             width: 100%;
-            height: 250px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 220px;
+            background: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 80px;
+            overflow: hidden;
+        }
+
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         .product-info {
@@ -313,6 +323,7 @@
     </style>
 </head>
 <body>
+
     <header>
         <div class="header-container">
             <div class="logo">
@@ -355,7 +366,7 @@
     <div class="container">
         <h2 class="section-title" id="productsTitle">Our Dinosaurs 🦕</h2>
         <div class="products-grid" id="productsContainer">
-            <!-- Products will be generated here -->
+            <!-- Los productos se cargarán dinámicamente desde Supabase -->
         </div>
     </div>
 
@@ -378,85 +389,49 @@
     </footer>
 
     <script>
-        const products = [
-            {
-                id: 1,
-                name: "T-Rex King",
-                description: "Mighty Tyrannosaurus Rex - The king of dinosaurs!",
-                price: 34.99,
-                emoji: "🦖"
-            },
-            {
-                id: 2,
-                name: "Triceratops Guardian",
-                description: "Three-horned defender with impressive detail",
-                price: 29.99,
-                emoji: "🦕"
-            },
-            {
-                id: 3,
-                name: "Stegosaurus Classic",
-                description: "Iconic plates and tail spike design",
-                price: 24.99,
-                emoji: "🦕"
-            },
-            {
-                id: 4,
-                name: "Pteranodon Flyer",
-                description: "Winged reptile - the ancient sky master",
-                price: 27.99,
-                emoji: "🦖"
-            },
-            {
-                id: 5,
-                name: "Ankylosaurus Tank",
-                description: "Armored beast with clubbed tail",
-                price: 32.99,
-                emoji: "🦕"
-            },
-            {
-                id: 6,
-                name: "Velociraptors Pack",
-                description: "Set of 3 intelligent hunters",
-                price: 39.99,
-                emoji: "🦖"
-            }
-        ];
+        // Configuración de Supabase (reemplaza 'TU_ANON_KEY_AQUI' con tu clave real)
+        const SUPABASE_URL = 'https://olfheyzynklvcurgxyjh.supabase.co';
+        const SUPABASE_ANON_KEY = 'TU_ANON_KEY_AQUI'; 
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        let products = [];
         let cart = [];
 
-       async function initializeProducts() {
-    const container = document.getElementById('productsContainer');
-    
-    const { data, error } = await _supabase.from('productos').select('*');
-    
-    if (error) {
-        console.error('Error cargando productos:', error);
-        return;
-    }
+        async function initializeProducts() {
+            const container = document.getElementById('productsContainer');
+            
+            // Consulta a Supabase
+            const { data, error } = await _supabase.from('productos').select('*');
+            
+            if (error) {
+                console.error('Error cargando productos:', error);
+                container.innerHTML = '<p style="text-align:center;">Error al cargar productos.</p>';
+                return;
+            }
 
-    products = data;
+            products = data;
+            container.innerHTML = ''; 
 
-    container.innerHTML = ''; 
-    products.forEach(product => {
-        const productCard = document.createElement('div');
-        productCard.className = 'product-card';
-        productCard.innerHTML = `
-            <div class="product-image">
-                <img src="${product.image_url}" alt="${product.name}" style="width: 100%; height: 200px; object-fit: contain;">
-            </div>
-            <div class="product-info">
-                <div class="product-name">${product.name}</div>
-                <div class="product-description">${product.description}</div>
-                <div class="product-footer">
-                    <div class="price">$${Number(product.price).toFixed(2)}</div>
-                    <button class="add-to-cart-btn" onclick="addToCart(${product.id})">Add</button>
-                </div>
-            </div>
-        `;
-        container.appendChild(productCard);
-    });
-}
+            products.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card';
+                productCard.innerHTML = `
+                    <div class="product-image">
+                        <img src="${product.image_url}" alt="${product.name}">
+                    </div>
+                    <div class="product-info">
+                        <div class="product-name">${product.name}</div>
+                        <div class="product-description">${product.description}</div>
+                        <div class="product-footer">
+                            <div class="price">$${Number(product.price).toFixed(2)}</div>
+                            <button class="add-to-cart-btn" onclick="addToCart(${product.id})">Add</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(productCard);
+            });
+        }
+
         function addToCart(productId) {
             const product = products.find(p => p.id === productId);
             const existingItem = cart.find(item => item.id === productId);
@@ -546,7 +521,6 @@
                 border-radius: 4px;
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
                 z-index: 300;
-                animation: slideIn 0.3s ease-out;
             `;
             document.body.appendChild(notification);
             setTimeout(() => {
@@ -561,8 +535,8 @@
             }
         }
 
-        // Initialize
-        initializeProducts();
+        // Cargar productos al iniciar la ventana
+        window.addEventListener('DOMContentLoaded', initializeProducts);
     </script>
 </body>
 </html>
