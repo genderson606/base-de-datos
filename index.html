@@ -549,27 +549,33 @@
             }
         }
 
-        // 2. Control de Modales Auth
-        function openAuthModal(mode) {
-            authMode = mode;
-            const title = document.getElementById('authTitle');
-            const submitBtn = document.getElementById('authSubmitBtn');
-            const toggleText = document.getElementById('authToggleText');
+       // 2. Control de Modales Auth
+function openAuthModal(mode) {
+    authMode = mode;
+    updateAuthModalUI();
+    document.getElementById('authModal').style.display = 'block';
+}
 
-            if (authMode === 'login') {
-                title.textContent = 'Welcome Back 🦖';
-                submitBtn.textContent = 'Sign In';
-                toggleText.innerHTML = 'Don\'t have an account? <span onclick="openAuthModal(\'register\')">Sign Up</span>';
-            } else {
-                title.textContent = 'Create Account 🦕';
-                submitBtn.textContent = 'Sign Up';
-                toggleText.innerHTML = 'Already have an account? <span onclick="openAuthModal(\'login\')">Sign In</span>';
-            }
+function toggleAuthMode() {
+    authMode = authMode === 'login' ? 'register' : 'login';
+    updateAuthModalUI();
+}
 
-            document.getElementById('authModal').style.display = 'block';
-        }
+function updateAuthModalUI() {
+    const title = document.getElementById('authTitle');
+    const submitBtn = document.getElementById('authSubmitBtn');
+    const toggleText = document.getElementById('authToggleText');
 
-        function closeAuthModal() {
+    if (authMode === 'login') {
+        title.textContent = 'Welcome Back 🦖';
+        submitBtn.textContent = 'Sign In';
+        toggleText.innerHTML = 'Don\'t have an account? <span onclick="toggleAuthMode()" style="color: #667eea; cursor: pointer; font-weight: bold;">Sign Up</span>';
+    } else {
+        title.textContent = 'Create Account 🦕';
+        submitBtn.textContent = 'Sign Up';
+        toggleText.innerHTML = 'Already have an account? <span onclick="toggleAuthMode()" style="color: #667eea; cursor: pointer; font-weight: bold;">Sign In</span>';
+    }
+}
             document.getElementById('authModal').style.display = 'none';
         }
 
