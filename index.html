@@ -503,252 +503,255 @@
         <p>Shipping worldwide | Quality guaranteed</p>
     </footer>
 
-    <script>
-        // Configuración de Supabase (Reemplaza la Anon Key)
-        const SUPABASE_URL = 'https://olfheyzynklvcurgxyjh.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sZmhleXp5bmtsdmN1cmd4eWpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczMTY5NTYsImV4cCI6MjEwMjg5Mjk1Nn0.lfZoX7m68w9f41MmKiFAPN0QfXwPoSlRRFkfqFziP-A'; 
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+<script>
+    // Configuración de Supabase (Reemplaza la Anon Key)
+    const SUPABASE_URL = 'https://olfheyzynklvcurgxyjh.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sZmhleXp5bmtsdmN1cmd4eWpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczMTY5NTYsImV4cCI6MjEwMjg5Mjk1Nn0.lfZoX7m68w9f41MmKiFAPN0QfXwPoSlRRFkfqFziP-A'; 
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let products = [];
-        let cart = [];
-        let currentUser = null;
-        let authMode = 'login'; // 'login' o 'register'
+    let products = [];
+    let cart = [];
+    let currentUser = null;
+    let authMode = 'login'; // 'login' o 'register'
 
-        // Inicialización
-        window.addEventListener('DOMContentLoaded', async () => {
-            await checkUserSession();
-            await initializeProducts();
-        });
+    // Inicialización
+    window.addEventListener('DOMContentLoaded', async () => {
+        await checkUserSession();
+        await initializeProducts();
+    });
 
-        // 1. Verificar Sesión de Usuario
-        async function checkUserSession() {
-            const { data: { session } } = await _supabase.auth.getSession();
+    // 1. Verificar Sesión de Usuario
+    async function checkUserSession() {
+        const { data: { session } } = await _supabase.auth.getSession();
+        updateUIForUser(session ? session.user : null);
+
+        // Escuchar cambios de autenticación
+        _supabase.auth.onAuthStateChange((_event, session) => {
             updateUIForUser(session ? session.user : null);
-
-            // Escuchar cambios de autenticación
-            _supabase.auth.onAuthStateChange((_event, session) => {
-                updateUIForUser(session ? session.user : null);
-            });
-        }
-
-        function updateUIForUser(user) {
-            currentUser = user;
-            const authNav = document.getElementById('authNav');
-
-            if (currentUser) {
-                authNav.innerHTML = `
-                    <div class="user-info">
-                        <span>👤 ${currentUser.email.split('@')[0]}</span>
-                        <button class="logout-btn" onclick="handleLogout()">Logout</button>
-                    </div>
-                `;
-            } else {
-                authNav.innerHTML = `
-                    <button class="auth-btn" onclick="openAuthModal('login')">Login</button>
-                `;
-            }
-        }
-
-       // 2. Control de Modales Auth
-function openAuthModal(mode) {
-    authMode = mode;
-    updateAuthModalUI();
-    document.getElementById('authModal').style.display = 'block';
-}
-
-function toggleAuthMode() {
-    authMode = authMode === 'login' ? 'register' : 'login';
-    updateAuthModalUI();
-}
-
-function updateAuthModalUI() {
-    const title = document.getElementById('authTitle');
-    const submitBtn = document.getElementById('authSubmitBtn');
-    const toggleText = document.getElementById('authToggleText');
-
-    if (authMode === 'login') {
-        title.textContent = 'Welcome Back 🦖';
-        submitBtn.textContent = 'Sign In';
-        toggleText.innerHTML = 'Don\'t have an account? <span onclick="toggleAuthMode()" style="color: #667eea; cursor: pointer; font-weight: bold;">Sign Up</span>';
-    } else {
-        title.textContent = 'Create Account 🦕';
-        submitBtn.textContent = 'Sign Up';
-        toggleText.innerHTML = 'Already have an account? <span onclick="toggleAuthMode()" style="color: #667eea; cursor: pointer; font-weight: bold;">Sign In</span>';
+        });
     }
-}
+
+    function updateUIForUser(user) {
+        currentUser = user;
+        const authNav = document.getElementById('authNav');
+
+        if (currentUser) {
+            authNav.innerHTML = `
+                <div class="user-info">
+                    <span>👤 ${currentUser.email.split('@')[0]}</span>
+                    <button class="logout-btn" onclick="handleLogout()">Logout</button>
+                </div>
+            `;
+        } else {
+            authNav.innerHTML = `
+                <button class="auth-btn" onclick="openAuthModal('login')">Login</button>
+            `;
         }
+    }
 
-        // 3. Manejo de Login y Registro
-        async function handleAuth(event) {
-            event.preventDefault();
-            const email = document.getElementById('authEmail').value;
-            const password = document.getElementById('authPassword').value;
+    // 2. Control de Modales Auth
+    function openAuthModal(mode) {
+        authMode = mode;
+        updateAuthModalUI();
+        document.getElementById('authModal').style.display = 'block';
+    }
 
-            try {
-                if (authMode === 'login') {
-                    const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
-                    if (error) throw error;
-                    showNotification('Logged in successfully!');
-                } else {
-                    const { data, error } = await _supabase.auth.signUp({ email, password });
-                    if (error) throw error;
-                    showNotification('Registration successful!');
-                }
-                closeAuthModal();
-                // Limpiar campos
-                document.getElementById('authEmail').value = '';
-                document.getElementById('authPassword').value = '';
-            } catch (error) {
-                alert(error.message);
+    function closeAuthModal() {
+        document.getElementById('authModal').style.display = 'none';
+    }
+
+    function toggleAuthMode() {
+        authMode = authMode === 'login' ? 'register' : 'login';
+        updateAuthModalUI();
+    }
+
+    function updateAuthModalUI() {
+        const title = document.getElementById('authTitle');
+        const submitBtn = document.getElementById('authSubmitBtn');
+        const toggleText = document.getElementById('authToggleText');
+
+        if (authMode === 'login') {
+            title.textContent = 'Welcome Back 🦖';
+            submitBtn.textContent = 'Sign In';
+            toggleText.innerHTML = 'Don\'t have an account? <span onclick="toggleAuthMode()" style="color: #667eea; cursor: pointer; font-weight: bold;">Sign Up</span>';
+        } else {
+            title.textContent = 'Create Account 🦕';
+            submitBtn.textContent = 'Sign Up';
+            toggleText.innerHTML = 'Already have an account? <span onclick="toggleAuthMode()" style="color: #667eea; cursor: pointer; font-weight: bold;">Sign In</span>';
+        }
+    }
+
+    // 3. Manejo de Login y Registro
+    async function handleAuth(event) {
+        event.preventDefault();
+        const email = document.getElementById('authEmail').value;
+        const password = document.getElementById('authPassword').value;
+
+        try {
+            if (authMode === 'login') {
+                const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                showNotification('Logged in successfully!');
+            } else {
+                const { data, error } = await _supabase.auth.signUp({ email, password });
+                if (error) throw error;
+                showNotification('Registration successful!');
             }
+            closeAuthModal();
+            // Limpiar campos
+            document.getElementById('authEmail').value = '';
+            document.getElementById('authPassword').value = '';
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+
+    async function handleLogout() {
+        await _supabase.auth.signOut();
+        showNotification('Logged out successfully.');
+    }
+
+    // 4. Productos y Carrito
+    async function initializeProducts() {
+        const container = document.getElementById('productsContainer');
+        const { data, error } = await _supabase.from('productos').select('*');
+        
+        if (error) {
+            console.error('Error cargando productos:', error);
+            container.innerHTML = '<p style="text-align:center;">Error al cargar productos.</p>';
+            return;
         }
 
-        async function handleLogout() {
-            await _supabase.auth.signOut();
-            showNotification('Logged out successfully.');
-        }
+        products = data;
+        container.innerHTML = ''; 
 
-        // 4. Productos y Carrito
-        async function initializeProducts() {
-            const container = document.getElementById('productsContainer');
-            const { data, error } = await _supabase.from('productos').select('*');
-            
-            if (error) {
-                console.error('Error cargando productos:', error);
-                container.innerHTML = '<p style="text-align:center;">Error al cargar productos.</p>';
-                return;
-            }
-
-            products = data;
-            container.innerHTML = ''; 
-
-            products.forEach(product => {
-                const productCard = document.createElement('div');
-                productCard.className = 'product-card';
-                productCard.innerHTML = `
-                    <div class="product-image">
-                        <img src="${product.image_url}" alt="${product.name}">
+        products.forEach(product => {
+            const productCard = document.createElement('div');
+            productCard.className = 'product-card';
+            productCard.innerHTML = `
+                <div class="product-image">
+                    <img src="${product.image_url}" alt="${product.name}">
+                </div>
+                <div class="product-info">
+                    <div class="product-name">${product.name}</div>
+                    <div class="product-description">${product.description}</div>
+                    <div class="product-footer">
+                        <div class="price">$${Number(product.price).toFixed(2)}</div>
+                        <button class="add-to-cart-btn" onclick="addToCart(${product.id})">Add</button>
                     </div>
-                    <div class="product-info">
-                        <div class="product-name">${product.name}</div>
-                        <div class="product-description">${product.description}</div>
-                        <div class="product-footer">
-                            <div class="price">$${Number(product.price).toFixed(2)}</div>
-                            <button class="add-to-cart-btn" onclick="addToCart(${product.id})">Add</button>
+                </div>
+            `;
+            container.appendChild(productCard);
+        });
+    }
+
+    function addToCart(productId) {
+        const product = products.find(p => p.id === productId);
+        const existingItem = cart.find(item => item.id === productId);
+        
+        if (existingItem) {
+            existingItem.quantity++;
+        } else {
+            cart.push({ ...product, quantity: 1 });
+        }
+        
+        updateCartCount();
+        showNotification(`${product.name} added to cart!`);
+    }
+
+    function updateCartCount() {
+        const count = cart.reduce((total, item) => total + item.quantity, 0);
+        document.getElementById('cartCount').textContent = count;
+    }
+
+    function openCart() {
+        const modal = document.getElementById('cartModal');
+        const cartItemsDiv = document.getElementById('cartItems');
+        
+        if (cart.length === 0) {
+            cartItemsDiv.innerHTML = '<div class="empty-cart">Your cart is empty. Start shopping!</div>';
+        } else {
+            let itemsHTML = '';
+            cart.forEach(item => {
+                itemsHTML += `
+                    <div class="cart-item">
+                        <span>${item.name} x ${item.quantity}</span>
+                        <div>
+                            <span>$${(item.price * item.quantity).toFixed(2)}</span>
+                            <button style="margin-left: 10px; cursor: pointer; background: #ff6b6b; color: white; border: none; padding: 5px 10px; border-radius: 3px;" onclick="removeFromCart(${item.id})">Remove</button>
                         </div>
                     </div>
                 `;
-                container.appendChild(productCard);
             });
+            cartItemsDiv.innerHTML = itemsHTML;
         }
+        
+        const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        document.getElementById('cartTotalPrice').textContent = total.toFixed(2);
+        
+        modal.style.display = 'block';
+    }
 
-        function addToCart(productId) {
-            const product = products.find(p => p.id === productId);
-            const existingItem = cart.find(item => item.id === productId);
-            
-            if (existingItem) {
-                existingItem.quantity++;
-            } else {
-                cart.push({ ...product, quantity: 1 });
-            }
-            
-            updateCartCount();
-            showNotification(`${product.name} added to cart!`);
-        }
+    function closeCart() {
+        document.getElementById('cartModal').style.display = 'none';
+    }
 
-        function updateCartCount() {
-            const count = cart.reduce((total, item) => total + item.quantity, 0);
-            document.getElementById('cartCount').textContent = count;
-        }
+    function removeFromCart(productId) {
+        cart = cart.filter(item => item.id !== productId);
+        updateCartCount();
+        openCart();
+    }
 
-        function openCart() {
-            const modal = document.getElementById('cartModal');
-            const cartItemsDiv = document.getElementById('cartItems');
-            
-            if (cart.length === 0) {
-                cartItemsDiv.innerHTML = '<div class="empty-cart">Your cart is empty. Start shopping!</div>';
-            } else {
-                let itemsHTML = '';
-                cart.forEach(item => {
-                    itemsHTML += `
-                        <div class="cart-item">
-                            <span>${item.name} x ${item.quantity}</span>
-                            <div>
-                                <span>$${(item.price * item.quantity).toFixed(2)}</span>
-                                <button style="margin-left: 10px; cursor: pointer; background: #ff6b6b; color: white; border: none; padding: 5px 10px; border-radius: 3px;" onclick="removeFromCart(${item.id})">Remove</button>
-                            </div>
-                        </div>
-                    `;
-                });
-                cartItemsDiv.innerHTML = itemsHTML;
-            }
-            
-            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            document.getElementById('cartTotalPrice').textContent = total.toFixed(2);
-            
-            modal.style.display = 'block';
-        }
-
-        function closeCart() {
-            document.getElementById('cartModal').style.display = 'none';
-        }
-
-        function removeFromCart(productId) {
-            cart = cart.filter(item => item.id !== productId);
-            updateCartCount();
-            openCart();
-        }
-
-        function checkout() {
-            if (!currentUser) {
-                alert('Please log in to complete your purchase!');
-                closeCart();
-                openAuthModal('login');
-                return;
-            }
-
-            if (cart.length === 0) {
-                alert('Your cart is empty!');
-                return;
-            }
-
-            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            alert(`Thank you for your purchase, ${currentUser.email}!\nTotal: $${total.toFixed(2)}\n\nYour dinosaurs will be shipped soon! 🦖🦕`);
-            cart = [];
-            updateCartCount();
+    function checkout() {
+        if (!currentUser) {
+            alert('Please log in to complete your purchase!');
             closeCart();
+            openAuthModal('login');
+            return;
         }
 
-        function scrollToProducts() {
-            document.getElementById('productsTitle').scrollIntoView({ behavior: 'smooth' });
+        if (cart.length === 0) {
+            alert('Your cart is empty!');
+            return;
         }
 
-        function showNotification(message) {
-            const notification = document.createElement('div');
-            notification.textContent = message;
-            notification.style.cssText = `
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                background: #667eea;
-                color: white;
-                padding: 15px 20px;
-                border-radius: 4px;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-                z-index: 300;
-            `;
-            document.body.appendChild(notification);
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
+        const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        alert(`Thank you for your purchase, ${currentUser.email}!\nTotal: $${total.toFixed(2)}\n\nYour dinosaurs will be shipped soon! 🦖🦕`);
+        cart = [];
+        updateCartCount();
+        closeCart();
+    }
 
-        window.onclick = function(event) {
-            const cartModal = document.getElementById('cartModal');
-            const authModal = document.getElementById('authModal');
-            if (event.target == cartModal) cartModal.style.display = 'none';
-            if (event.target == authModal) authModal.style.display = 'none';
-        }
-    </script>
+    function scrollToProducts() {
+        document.getElementById('productsTitle').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showNotification(message) {
+        const notification = document.createElement('div');
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #667eea;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            z-index: 300;
+        `;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    window.onclick = function(event) {
+        const cartModal = document.getElementById('cartModal');
+        const authModal = document.getElementById('authModal');
+        if (event.target == cartModal) cartModal.style.display = 'none';
+        if (event.target == authModal) authModal.style.display = 'none';
+    }
+</script>
 </body>
 </html>
