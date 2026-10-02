@@ -168,6 +168,7 @@
             padding: 1.5rem;
             margin-bottom: 2rem;
             display: none;
+            position: relative;
             animation: modalSlide 0.3s ease-out;
         }
 
@@ -177,6 +178,22 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+        }
+
+        .close-admin-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1.25rem;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-admin-btn:hover {
+            color: #ef4444;
         }
 
         .admin-form {
@@ -342,8 +359,9 @@
     </nav>
 
     <main>
-        <!-- Panel Administrador (Protegido por Contraseña) -->
+        <!-- Panel Administrador -->
         <div class="admin-panel" id="adminPanel">
+            <button class="close-admin-btn" onclick="closeAdminPanel()" title="Salir del Modo Admin">&times;</button>
             <h3>⚡ Panel Administrador - Agregar Nuevo Dinosaurio</h3>
             <form id="addDinoForm" onsubmit="handleAddDino(event)" class="admin-form">
                 <div class="form-group" style="margin: 0;">
@@ -358,7 +376,10 @@
                     <label for="dinoImageFile">Imagen (Bucket Supabase)</label>
                     <input type="file" id="dinoImageFile" accept="image/*" required style="padding: 0.5rem;">
                 </div>
-                <button type="submit" class="btn" style="height: 45px;">Guardar Dinosaurio</button>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="submit" class="btn" style="height: 45px; flex-grow: 1;">Guardar</button>
+                    <button type="button" class="btn btn-outline btn-danger" style="height: 45px;" onclick="closeAdminPanel()">Salir</button>
+                </div>
             </form>
         </div>
 
@@ -504,7 +525,7 @@
                 const productCard = document.createElement('div');
                 productCard.className = 'card';
                 productCard.innerHTML = `
-                    <img src="${product.image}" alt="${product.name}" class="card-img" onerror="this.onerror=null; this.src='trexpnso.jpg';">
+                    <img src="${product.image}" alt="${product.name}" class="card-img" loading="lazy" onerror="this.onerror=null; this.src='trexpnso.jpg';">
                     <div class="card-body">
                         <div>
                             <h3 class="card-title">${product.name}</h3>
@@ -523,7 +544,7 @@
             renderProducts(filtered);
         }
 
-        /* --- Panel Administrador (Contraseña victitor) --- */
+        /* --- Panel Administrador (Contraseña: victitor) --- */
         async function promptAdminPassword() {
             const { value: password } = await Swal.fire({
                 title: 'Acceso Administrador',
@@ -544,6 +565,11 @@
             }
         }
 
+        function closeAdminPanel() {
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('addDinoForm').reset();
+        }
+
         async function handleAddDino(e) {
             e.preventDefault();
             const name = document.getElementById('dinoName').value;
@@ -556,23 +582,23 @@
             try {
                 Swal.fire({ title: 'Subiendo dinosaurio...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
 
-                // 1. Subir archivo al Bucket "dinosaurios"
+                // Subir archivo al Bucket "dinosaurios"
                 const fileName = `${Date.now()}_${file.name}`;
                 const { data: storageData, error: storageError } = await _supabase.storage.from('dinosaurios').upload(fileName, file);
 
                 if (storageError) throw storageError;
 
-                // 2. Obtener URL pública
+                // Obtener URL pública
                 const { data: { publicUrl } } = _supabase.storage.from('dinosaurios').getPublicUrl(fileName);
 
-                // 3. Guardar en la tabla "productos"
+                // Guardar en la tabla "productos"
                 const { error: dbError } = await _supabase.from('productos').insert([{ name: name, price: price, image_url: publicUrl }]);
 
                 if (dbError) throw dbError;
 
                 Swal.fire({ icon: 'success', title: '¡Dinosaurio guardado!', text: `${name} ya está en el catálogo.`, background: '#1e293b', color: '#fff', confirmButtonColor: '#10b981' });
 
-                document.getElementById('addDinoForm').reset();
+                closeAdminPanel();
                 await initializeProducts();
 
             } catch (err) {
@@ -731,7 +757,7 @@
                 if (isSignUp) {
                     const { error } = await _supabase.auth.signUp({ email, password });
                     if (error) throw error;
-                    Swal.fire({ icon: 'success', title: 'Registro completo', text: '¡Cuenta creada!', background: '#1e293b', color: '#fff', confirmButtonColor: '#10b981' });
+                    Swal.fire({ icon: 'success', title: 'Registro completo', text: '¡Cuenta creada! Ya puedes iniciar sesión.', background: '#1e293b', color: '#fff', confirmButtonColor: '#10b981' });
                 } else {
                     const { error } = await _supabase.auth.signInWithPassword({ email, password });
                     if (error) throw error;
